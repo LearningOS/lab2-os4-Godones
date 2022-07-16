@@ -79,20 +79,21 @@ pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
     //判断是否已经存在某个页被映射
     let new_port: u8 = (port & 0x7) as u8;
     let permission = MapPermission::U;
-    let map_permission = MapPermission::from_bits(new_port << 1 as u8).unwrap() | permission;
+    let map_permission = MapPermission::from_bits(new_port << 1).unwrap() | permission;
 
     let start_vpn = start_vir.floor(); //起始页
     let end_vpn = VirtAddr::from(start + len).ceil(); //向上取整结束页
 
+    error!("[kernel] start_vpn: {:#x}, end_vpn: {:#x}", start_vpn.0, end_vpn.0);
     //申请到一个map_area后判断其每个页是否出现在map_area中过
     let current_user_token = current_user_token(); //获取当前用户程序的satp
     let temp_page_table = PageTable::from_token(current_user_token);
-    for vpn in start_vpn.0..end_vpn.0 {
+    for vpn in start_vpn.0 ..end_vpn.0 {
         if let Some(_val) = temp_page_table.find_pte(vpn.into()) {
+            error!("[kernel] mmap failed, page {:#x} already exists",vpn);
             return -1;
         } //提前返回错误值
     }
-    // let map_area = MapArea::new(start_vir,(start+len).into(),Framed,map_permission);
     current_add_area(start_vir, (start + len).into(), map_permission);
     0
 }

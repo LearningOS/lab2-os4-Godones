@@ -84,6 +84,7 @@ impl PageTable {
         let mut idxs = vpn.indexes();
         let mut ppn = self.root_ppn;
         let mut result: Option<&mut PageTableEntry> = None;
+        info!("find_pte_create: vpn: {:#x}, idxs: {}-{}-{}, ppn:{:#x}", vpn.0, idxs[0], idxs[1], idxs[2],ppn.0);
         for (i, idx) in idxs.iter_mut().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
             if i == 2 {
@@ -105,12 +106,12 @@ impl PageTable {
         let mut result: Option<&PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &ppn.get_pte_array()[*idx];
+            if !pte.is_valid() {
+                return None;
+            }
             if i == 2 {
                 result = Some(pte);
                 break;
-            }
-            if !pte.is_valid() {
-                return None;
             }
             ppn = pte.ppn();
         }
